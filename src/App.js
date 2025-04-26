@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext'; // Import useAuth too
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
 import Signup from './components/Signup';
 import Home from './components/Home';
@@ -11,62 +11,63 @@ import PostOrder from './pages/PostOrder';
 
 // PrivateRoute component to protect routes
 function PrivateRoute({ children }) {
-  const { currentUser } = useAuth(); // get logged-in user
+  const { currentUser } = useAuth();
   return currentUser ? children : <Navigate to="/" />;
 }
 
 function App() {
   return (
     <AuthProvider>
-      <Router basename="/planora">
+      {/* ❌ Remove basename="/planora" */}
+      <Router>
         <Routes>
-          {/* Default route is Login */}
+          {/* Public routes */}
           <Route path="/" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          
+
           {/* Protected routes */}
-          <Route 
-            path="/home" 
+          <Route
+            path="/home"
             element={
               <PrivateRoute>
                 <Home />
               </PrivateRoute>
-            } 
+            }
           />
-          <Route 
-            path="/company/:id" 
+          <Route
+            path="/company/:id"
             element={
               <PrivateRoute>
                 <CompanyDetail />
               </PrivateRoute>
-            } 
+            }
           />
-          <Route 
-            path="/profile" 
+          <Route
+            path="/profile"
             element={
               <PrivateRoute>
                 <Profile />
               </PrivateRoute>
-            } 
+            }
           />
-          <Route 
-            path="/messages" 
+          <Route
+            path="/messages"
             element={
               <PrivateRoute>
                 <MessagePage />
               </PrivateRoute>
-            } 
+            }
           />
-          <Route 
-            path="/post-order" 
+          <Route
+            path="/post-order"
             element={
               <PrivateRoute>
                 <PostOrder />
               </PrivateRoute>
-            } 
+            }
           />
-          
-          {/* If route not found, redirect to login */}
+
+          {/* Catch-all route: Redirect unknown routes to Login */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>
