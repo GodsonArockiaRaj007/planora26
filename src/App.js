@@ -12,13 +12,12 @@ import PostOrder from './pages/PostOrder';
 // PrivateRoute component to protect routes
 function PrivateRoute({ children }) {
   const { currentUser } = useAuth();
-  return currentUser ? children : <Navigate to="/" />;
+  return currentUser ? children : <Navigate to="/" replace />;
 }
 
 function App() {
   return (
     <AuthProvider>
-      {/* ❌ Remove basename="/planora" */}
       <Router>
         <Routes>
           {/* Public routes */}
@@ -68,7 +67,7 @@ function App() {
           />
 
           {/* Catch-all route: Redirect unknown routes to Login */}
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
     </AuthProvider>
