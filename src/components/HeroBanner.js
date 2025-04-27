@@ -15,7 +15,6 @@ const HeroBanner = () => {
         <h1 style={styles.title}>PLANORA</h1>
         <p style={styles.subtitle}>Plan your events here</p>
       </div>
-      {/* <button style={styles.button}>Book Now</button> */}
     </div>
   );
 };
@@ -24,11 +23,14 @@ const styles = {
   bannerContainer: {
     position: 'relative',
     width: '100%',
-    height: 'auto',
     overflow: 'hidden',
-    
+    margin: 0,            // remove all margins
+    padding: 0,           // remove all padding
+    marginTop: '0px',    // small gap at top
+    marginBottom: '0',    // remove bottom gap
   },
   video: {
+    display: 'block',     // eliminate inline-bottom whitespace
     width: '100%',
     maxHeight: '500px',
     objectFit: 'cover',
@@ -52,19 +54,6 @@ const styles = {
     fontSize: '20px',
     marginTop: '10px',
     textShadow: '1px 1px 5px rgba(0, 0, 0, 0.5)',
-  },
-  button: {
-    position: 'absolute',
-    bottom: '30px',
-    left: '30px',
-    padding: '12px 24px',
-    backgroundColor: '#d32f2f',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '5px',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    zIndex: 1,
   },
 };
 

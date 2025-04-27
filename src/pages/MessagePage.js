@@ -23,32 +23,33 @@ const MessagePage = () => {
   const currentUser = auth.currentUser;
   const chatEndRef = useRef(null);
 
+  // auto-scroll
   useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
+  // fetch senders
   useEffect(() => {
     if (!currentUser) return;
-
-    const unsubscribe = onSnapshot(
-      query(collection(db, 'webchat'), where('receiverId', '==', currentUser.uid)),
-      (snapshot) => {
-        const msgs = snapshot.docs.map((doc) => doc.data());
-        const uniqueSenders = Array.from(
-          new Map(msgs.map((msg) => [msg.senderId, msg])).values()
+    const unsub = onSnapshot(
+      query(
+        collection(db, 'webchat'),
+        where('receiverId', '==', currentUser.uid)
+      ),
+      snap => {
+        const msgs = snap.docs.map(d => d.data());
+        const unique = Array.from(
+          new Map(msgs.map(m => [m.senderId, m])).values()
         );
-        setSenders(uniqueSenders);
+        setSenders(unique);
       }
     );
-
-    return () => unsubscribe();
+    return unsub;
   }, [currentUser]);
 
+  // fetch chat with selected
   useEffect(() => {
     if (!selectedSender || !currentUser) return;
-
     const q = query(
       collection(db, 'webchat'),
       where('senderId', 'in', [currentUser.uid, selectedSender.senderId]),
@@ -56,205 +57,219 @@ const MessagePage = () => {
       orderBy('time'),
       limit(50)
     );
-
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const msgs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const unsub = onSnapshot(q, snap => {
+      const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setChatMessages(msgs);
-
-      // Update message status to 'seen' if the current user is the receiver
-      snapshot.docs.forEach(async (docSnap) => {
-        const msg = docSnap.data();
-        const msgRef = doc(db, 'webchat', docSnap.id);
-
-        if (msg.receiverId === currentUser.uid && msg.status !== 'seen') {
-          await updateDoc(msgRef, {
-            status: 'seen',
-          });
+      // mark seen
+      snap.docs.forEach(async d => {
+        const m = d.data();
+        if (m.receiverId === currentUser.uid && m.status !== 'seen') {
+          await updateDoc(doc(db, 'webchat', d.id), { status: 'seen' });
         }
       });
     });
-
-    return () => unsubscribe();
+    return unsub;
   }, [selectedSender, currentUser]);
 
   const sendMessage = useCallback(async () => {
     if (!newMessage.trim() || !currentUser || !selectedSender) return;
-
     await addDoc(collection(db, 'webchat'), {
       senderId: currentUser.uid,
       receiverId: selectedSender.senderId,
-      senderName: currentUser.displayName || currentUser.email || 'Anonymous',
+      senderName: currentUser.displayName || 'Anonymous',
       receiverName: selectedSender.senderName,
       message: newMessage.trim(),
       time: serverTimestamp(),
       status: 'sent',
     });
-
     setNewMessage('');
   }, [newMessage, currentUser, selectedSender]);
 
-  const formatTime = (timestamp) => {
-    if (!timestamp) return '';
-    const date = timestamp.toDate();
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+  const fmtTime = ts => ts?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div style={styles.container}>
-      <div style={styles.sidebar}>
-        <h3>Chats</h3>
-        {senders.map((sender) => (
-          <div
-            key={sender.senderId}
-            style={{
-              ...styles.contact,
-              backgroundColor:
-                selectedSender?.senderId === sender.senderId ? '#e6e6e6' : '#fff',
-            }}
-            onClick={() => setSelectedSender(sender)}
-          >
-            {sender.senderName}
-          </div>
-        ))}
-      </div>
-
-      <div style={styles.chatbox}>
-        {selectedSender ? (
-          <>
-            <div style={styles.chatHeader}>
-              <h4>Chat with {selectedSender.senderName}</h4>
+    <div style={styles.pageWrapper}>
+      <div style={styles.container}>
+        <div style={styles.sidebar}>
+          <h3 style={styles.sidebarHeader}>Chats</h3>
+          {senders.map(s => (
+            <div
+              key={s.senderId}
+              style={{
+                ...styles.contact,
+                backgroundColor:
+                  selectedSender?.senderId === s.senderId ? '#e6f7ff' : '#ffffff',
+              }}
+              onClick={() => setSelectedSender(s)}
+            >
+              {s.senderName}
             </div>
-            <div style={styles.chatBody}>
-              {chatMessages.map((msg) => {
-                const isSentByCurrentUser = msg.senderId === currentUser.uid;
-                return (
-                  <div
-                    key={msg.id}
-                    style={{
-                      ...styles.messageBubble,
-                      alignSelf: isSentByCurrentUser ? 'flex-end' : 'flex-start',
-                      backgroundColor: isSentByCurrentUser ? '#dcf8c6' : '#fff',
-                    }}
-                  >
-                    <p>{msg.message}</p>
+          ))}
+        </div>
+
+        <div style={styles.chatbox}>
+          {selectedSender ? (
+            <>
+              <div style={styles.chatHeader}>
+                Chat with <strong>{selectedSender.senderName}</strong>
+              </div>
+              <div style={styles.chatBody}>
+                {chatMessages.map(msg => {
+                  const mine = msg.senderId === currentUser.uid;
+                  return (
                     <div
+                      key={msg.id}
                       style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        fontSize: '12px',
-                        marginTop: '4px',
-                        color: '#555',
-                        alignItems: 'center',
+                        ...styles.messageBubble,
+                        alignSelf: mine ? 'flex-end' : 'flex-start',
+                        backgroundColor: mine ? '#dcf8c6' : '#ffffff',
                       }}
                     >
-                      <span>{msg.senderName}</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span>{formatTime(msg.time)}</span>
-                        {isSentByCurrentUser && (
-                          <span style={{ fontSize: '14px' }}>
+                      <p style={styles.messageText}>{msg.message}</p>
+                      <div style={styles.messageMeta}>
+                        <span style={styles.metaName}>{msg.senderName}</span>
+                        <span style={styles.metaTime}>{fmtTime(msg.time)}</span>
+                        {mine && (
+                          <span style={styles.metaStatus}>
                             {msg.status === 'sent' && '✓'}
                             {msg.status === 'delivered' && '✓✓'}
-                            {msg.status === 'seen' && (
-                              <span style={{ color: '#34B7F1' }}>✓✓</span>
-                            )}
+                            {msg.status === 'seen' && <span style={{ color: '#34B7F1' }}>✓✓</span>}
                           </span>
                         )}
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-              <div ref={chatEndRef} />
-            </div>
-            <div style={styles.chatInput}>
-              <input
-                type="text"
-                placeholder="Type a message..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                style={styles.input}
-              />
-              <button onClick={sendMessage} style={styles.button}>
-                Send
-              </button>
-            </div>
-          </>
-        ) : (
-          <p style={{ padding: 20 }}>Select a user to start chatting</p>
-        )}
+                  );
+                })}
+                <div ref={chatEndRef} />
+              </div>
+              <div style={styles.chatInput}>
+                <input
+                  style={styles.input}
+                  placeholder="Type a message..."
+                  value={newMessage}
+                  onChange={e => setNewMessage(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && sendMessage()}
+                />
+                <button style={styles.sendBtn} onClick={sendMessage}>
+                  Send
+                </button>
+              </div>
+            </>
+          ) : (
+            <div style={styles.noChat}>Select a user to start chatting</div>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
 const styles = {
+  pageWrapper: {
+    backgroundColor: '#003f66',
+    minHeight: '100vh',
+    padding: '20px',
+  },
   container: {
     display: 'flex',
-    height: '90vh',
-    border: '1px solid #ccc',
-    borderRadius: '10px',
+    height: 'calc(100vh - 40px)',
+    borderRadius: '12px',
     overflow: 'hidden',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    backgroundColor: '#ffffff',
   },
   sidebar: {
     width: '30%',
-    borderRight: '1px solid #ccc',
-    padding: '10px',
+    borderRight: '1px solid #ddd',
+    backgroundColor: '#f9f9f9',
     overflowY: 'auto',
-    backgroundColor: '#f0f0f0',
+  },
+  sidebarHeader: {
+    margin: 0,
+    padding: '16px',
+    borderBottom: '1px solid #ddd',
+    fontSize: '18px',
+    backgroundColor: '#e6f7ff',
+    color: '#003f66',
   },
   contact: {
-    padding: '10px',
+    padding: '12px 16px',
     cursor: 'pointer',
-    borderBottom: '1px solid #ddd',
+    borderBottom: '1px solid #eee',
+    color: '#003f66',
   },
   chatbox: {
     width: '70%',
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'space-between',
+    backgroundColor: '#fafafa',
   },
   chatHeader: {
-    padding: '10px',
-    borderBottom: '1px solid #ccc',
-    backgroundColor: '#ededed',
+    padding: '16px',
+    backgroundColor: '#e6f7ff',
+    borderBottom: '1px solid #ddd',
+    color: '#003f66',
+    fontWeight: '600',
   },
   chatBody: {
     flex: 1,
-    padding: '10px',
+    padding: '16px',
     overflowY: 'auto',
     display: 'flex',
     flexDirection: 'column',
-    gap: '8px',
-    backgroundColor: '#fafafa',
+    gap: '12px',
   },
+  messageBubble: {
+    maxWidth: '60%',
+    padding: '12px',
+    borderRadius: '12px',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+  },
+  messageText: {
+    margin: 0,
+    color: '#333',
+  },
+  messageMeta: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: '8px',
+    marginTop: '6px',
+    fontSize: '12px',
+    color: '#555',
+  },
+  metaName: { fontWeight: '500' },
+  metaTime: {},
+  metaStatus: { fontSize: '14px' },
   chatInput: {
     display: 'flex',
-    borderTop: '1px solid #ccc',
-    padding: '10px',
+    borderTop: '1px solid #ddd',
+    padding: '12px',
+    backgroundColor: '#fff',
   },
   input: {
     flex: 1,
-    padding: '10px',
+    padding: '10px 14px',
     borderRadius: '20px',
     border: '1px solid #ccc',
     outline: 'none',
+    marginRight: '12px',
   },
-  button: {
-    marginLeft: '10px',
-    padding: '10px 15px',
+  sendBtn: {
+    padding: '10px 18px',
     backgroundColor: '#25D366',
     color: '#fff',
     border: 'none',
     borderRadius: '20px',
     cursor: 'pointer',
   },
-  messageBubble: {
-    padding: '10px',
-    borderRadius: '10px',
-    maxWidth: '60%',
-    boxShadow: '0 1px 1px rgba(0,0,0,0.1)',
-    wordBreak: 'break-word',
+  noChat: {
+    flex: 1,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    color: '#777',
+    fontSize: '16px',
   },
 };
 

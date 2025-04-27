@@ -1,16 +1,20 @@
+// src/pages/Profile.js
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const Profile = () => {
   const [userData, setUserData] = useState(null);
   const [editing, setEditing] = useState(false);
   const [updatedData, setUpdatedData] = useState({});
-  const { currentUser } = useAuth();
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
 
   const userRef = doc(db, 'user', currentUser?.uid);
 
+  // Fetch user data when component mounts
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -19,7 +23,7 @@ const Profile = () => {
           if (docSnap.exists()) {
             const data = docSnap.data();
             setUserData(data);
-            setUpdatedData(data); // Pre-fill edit form
+            setUpdatedData(data); // Pre-fill the edit form with current user data
           }
         }
       } catch (error) {
@@ -30,7 +34,7 @@ const Profile = () => {
     if (currentUser) {
       fetchUserData();
     }
-  }, [currentUser]);
+  }, [currentUser, userRef]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -45,6 +49,15 @@ const Profile = () => {
       alert('Profile updated successfully!');
     } catch (error) {
       console.error("Error updating profile:", error);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');  // Redirect to login page after logging out
+    } catch (error) {
+      console.error('Error logging out:', error);
     }
   };
 
@@ -96,6 +109,8 @@ const Profile = () => {
           </>
         )}
       </div>
+
+      <button onClick={handleLogout} style={styles.logoutButton}>Logout</button>
     </div>
   );
 };
@@ -140,6 +155,15 @@ const styles = {
     padding: '10px 20px',
     marginTop: '20px',
     backgroundColor: 'green',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+  },
+  logoutButton: {
+    padding: '10px 20px',
+    marginTop: '20px',
+    backgroundColor: '#ff4d4d',
     color: '#fff',
     border: 'none',
     borderRadius: '6px',

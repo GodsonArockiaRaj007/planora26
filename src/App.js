@@ -1,3 +1,4 @@
+// App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -66,7 +67,7 @@ function App() {
             }
           />
 
-          {/* Catch-all route: Redirect unknown routes to Login */}
+          {/* Catch-all: redirect unknown pages */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>

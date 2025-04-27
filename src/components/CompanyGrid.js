@@ -1,133 +1,206 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 const CompanyGrid = () => {
   const [companies, setCompanies] = useState([]);
-  const [visibleCompanies, setVisibleCompanies] = useState([]);
-  const [loadCount, setLoadCount] = useState(8);
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const scrollRef = useRef(null);
 
+  // Refs to track manual scroll state and timeout
+  const isManualScrolling = useRef(false);
+  const manualScrollTimeout = useRef(null);
+
+  // Fetch & sort companies once
   useEffect(() => {
-    const fetchCompanies = async () => {
+    (async () => {
       try {
-        const snapshot = await getDocs(collection(db, 'postorder'));
-        const companyList = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setCompanies(companyList);
-        setVisibleCompanies(companyList.slice(0, loadCount));
-      } catch (error) {
-        console.error('Error fetching companies:', error);
+        const snap = await getDocs(collection(db, 'postorder'));
+        const list = snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => {
+            const A = (a.businessname || '').toLowerCase();
+            const B = (b.businessname || '').toLowerCase();
+            return A.localeCompare(B);
+          });
+        setCompanies(list);
+      } catch (e) {
+        console.error(e);
       }
-    };
-
-    fetchCompanies();
+    })();
   }, []);
 
-  const handleScroll = useCallback((e) => {
-    const bottom = e.target.scrollHeight === e.target.scrollTop + e.target.clientHeight;
-    if (bottom && !isLoading) {
-      setIsLoading(true);
-      setTimeout(() => {
-        setLoadCount(prevCount => prevCount + 8);
-        setIsLoading(false);
-      }, 1000);
-    }
-  }, [isLoading]);
-
+  // Continuous auto‐scroll with seamless infinite loop
   useEffect(() => {
-    setVisibleCompanies(companies.slice(0, loadCount));
-  }, [loadCount, companies]);
+    const el = scrollRef.current;
+    if (!el) return;
 
-  const handleCompanyClick = (id) => {
-    navigate(`/company/${id}`);
+    const scrollStep = 1; // Speed of scrolling (adjust as necessary)
+    let animationFrameId;
+
+    const step = () => {
+      if (!isManualScrolling.current) {
+        el.scrollLeft += scrollStep;
+        // Reset scrollLeft to half scrollWidth for seamless loop
+        if (el.scrollLeft >= el.scrollWidth / 2) {
+          el.scrollLeft = 0;
+        }
+      }
+      animationFrameId = requestAnimationFrame(step);
+    };
+
+    animationFrameId = requestAnimationFrame(step);
+
+    // Cleanup on component unmount
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      if (manualScrollTimeout.current) clearTimeout(manualScrollTimeout.current);
+    };
+  }, [companies]);
+
+  const scrollLeft = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    // Pause auto-scroll
+    isManualScrolling.current = true;
+    el.scrollBy({ left: -200, behavior: 'smooth' });
+    // Resume auto-scroll after 2 seconds
+    if (manualScrollTimeout.current) clearTimeout(manualScrollTimeout.current);
+    manualScrollTimeout.current = setTimeout(() => {
+      isManualScrolling.current = false;
+    }, 2000);
+  };
+
+  const scrollRight = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    // Pause auto-scroll
+    isManualScrolling.current = true;
+    el.scrollBy({ left: 200, behavior: 'smooth' });
+    // Resume auto-scroll after 2 seconds
+    if (manualScrollTimeout.current) clearTimeout(manualScrollTimeout.current);
+    manualScrollTimeout.current = setTimeout(() => {
+      isManualScrolling.current = false;
+    }, 2000);
   };
 
   return (
-    <div
-      style={styles.wrapper}
-      onScroll={handleScroll}
-      className="company-grid-container"
-    >
-      <h2 style={styles.heading}>All Companies</h2>
-      <div style={styles.grid}>
-        {visibleCompanies.map((company) => (
-          <div
-            key={company.id}
-            style={styles.card}
-            onClick={() => handleCompanyClick(company.id)}
-          >
-            <img
-              src={company.image}
-              alt={company.businessname}
-              style={styles.image}
-              onError={(e) => (e.target.style.display = 'none')}
-            />
-            <p style={styles.name}>{company.businessname}</p>
-          </div>
-        ))}
-      </div>
+    <div style={styles.wrapper}>
+      {/* Hide scrollbar */}
+      <style>{`
+        .scrollWrapper::-webkit-scrollbar { display: none; }
+        .scrollWrapper { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
 
-      {isLoading && (
-        <div style={styles.loading}>Loading more companies...</div>
-      )}
+      <h2 style={styles.heading}>All Companies</h2>
+
+      <div style={styles.scrollArea}>
+        <button onClick={scrollLeft} style={styles.arrowButton}>
+          <FaChevronLeft size={20} />
+        </button>
+
+        <div
+          className="scrollWrapper"
+          style={styles.scrollWrapper}
+          ref={scrollRef}
+        >
+          <div style={styles.grid}>
+            {[...companies, ...companies].map((c, index) => (
+              <div
+                key={c.id + '-' + index}
+                style={styles.card}
+                onClick={() => navigate(`/company/${c.id}`)}
+              >
+                <img
+                  src={c.image || '/images/default.jpg'}
+                  alt={c.businessname}
+                  style={styles.image}
+                  onError={e => (e.currentTarget.style.display = 'none')}
+                />
+                <p style={styles.name}>{c.businessname || 'Unknown'}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <button onClick={scrollRight} style={styles.arrowButton}>
+          <FaChevronRight size={20} />
+        </button>
+      </div>
     </div>
   );
 };
 
 const styles = {
   wrapper: {
+    backgroundColor: '#003f66',
     padding: '40px 20px',
-    backgroundColor: '#fff',
-    borderRadius: '12px',
-    margin: '30px',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-    maxWidth: '100%',
-    overflowX: 'auto',
-    whiteSpace: 'nowrap',
+    overflow: 'hidden',
   },
   heading: {
-    fontSize: '24px',
-    fontWeight: '600',
+    color: '#fff',
+    textAlign: 'center',
+    fontSize: '28px',
+    fontWeight: 600,
     marginBottom: '30px',
+  },
+  scrollArea: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
+  scrollWrapper: {
+    flex: 1,
+    whiteSpace: 'nowrap',
+    overflowX: 'auto',
+    overflowY: 'hidden',
+    scrollBehavior: 'smooth',
   },
   grid: {
     display: 'inline-flex',
-    gap: '30px',
+    gap: '20px',
   },
   card: {
+    flex: '0 0 auto',
+    width: '180px',
+    height: '230px',
+    backgroundColor: '#fff',
+    borderRadius: '12px',
+    padding: '20px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+    textAlign: 'center',
+    cursor: 'pointer',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    padding: '10px',
-    border: '1px solid #eee',
-    borderRadius: '10px',
-    backgroundColor: '#f9f9f9',
-    minWidth: '160px',
-    textAlign: 'center',
-    cursor: 'pointer',
-    transition: 'transform 0.2s ease',
+    justifyContent: 'center',
   },
   image: {
-    width: '80px',
-    height: '80px',
-    objectFit: 'contain',
-    marginBottom: '10px',
+    width: '100px',
+    height: '100px',
+    borderRadius: '8px',
+    objectFit: 'cover',
+    marginBottom: '12px',
   },
   name: {
+    color: '#003f66',
     fontSize: '16px',
-    fontWeight: '500',
-    textAlign: 'center',
+    fontWeight: 600,
+    wordBreak: 'break-word',
   },
-  loading: {
-    textAlign: 'center',
-    fontSize: '18px',
-    color: '#888',
-    marginTop: '20px',
+  arrowButton: {
+    background: '#fff',
+    border: 'none',
+    borderRadius: '50%',
+    width: '40px',
+    height: '40px',
+    cursor: 'pointer',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 };
 

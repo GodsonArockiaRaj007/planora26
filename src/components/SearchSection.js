@@ -9,7 +9,7 @@ const categories = [
   { name: 'Music', image: '/images/music.jpg' },
   { name: 'Catering', image: '/images/catering.jpg' },
   { name: 'Venue', image: '/images/venue.jpg' },
-  { name: 'Return Gift', image: '/images/return-gift.jpg' },
+  { name: 'Return Gift', image: '/images/gifts.jpg' },
   { name: 'Travel', image: '/images/travel.jpg' },
   { name: 'DJ', image: '/images/dj.jpg' },
   { name: 'Cakes & Bakery', image: '/images/cakes.jpg' },
@@ -31,8 +31,11 @@ const SearchSection = () => {
     cat.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const topCategories = searchTerm ? filteredCategories : categories.slice(0, 8);
-  const remainingCategories = searchTerm ? [] : categories.slice(8);
+  const visibleCategories = searchTerm
+    ? filteredCategories
+    : showAll
+      ? categories
+      : categories.slice(0, 8);
 
   const handleCategoryClick = async (categoryName) => {
     setSelectedCategory(categoryName);
@@ -70,7 +73,7 @@ const SearchSection = () => {
       />
 
       <div style={styles.gridContainer}>
-        {topCategories.map((cat, i) => (
+        {visibleCategories.map((cat, i) => (
           <div key={i} style={styles.card} onClick={() => handleCategoryClick(cat.name)}>
             <img src={cat.image} alt={cat.name} style={styles.image} />
             <p style={styles.label}>{cat.name}</p>
@@ -78,38 +81,28 @@ const SearchSection = () => {
         ))}
       </div>
 
+      {/* Show More/Show Less button only if no search term */}
       {!searchTerm && (
-        <div style={{ marginTop: '10px', marginBottom: '20px' }}>
+        <div style={{ marginTop: '20px', marginBottom: '30px', textAlign: 'center' }}>
           <button style={styles.showAllBtn} onClick={() => setShowAll(prev => !prev)}>
             {showAll ? 'Show Less ▲' : 'Show All ▼'}
           </button>
         </div>
       )}
 
-      {showAll && !searchTerm && (
-        <div style={styles.gridContainer}>
-          {remainingCategories.map((cat, i) => (
-            <div key={i} style={styles.card} onClick={() => handleCategoryClick(cat.name)}>
-              <img src={cat.image} alt={cat.name} style={styles.image} />
-              <p style={styles.label}>{cat.name}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Show Results */}
+      {/* Results Section */}
       <div style={styles.resultContainer}>
-        {results.length > 0 && <h2>Companies Offering {selectedCategory}</h2>}
+        {results.length > 0 && <h2 style={styles.resultHeading}>Companies Offering {selectedCategory}</h2>}
         {results.length === 0 && selectedCategory && (
-          <p>No companies found for "{selectedCategory}"</p>
+          <p style={styles.noResults}>No companies found for "{selectedCategory}"</p>
         )}
         <div style={styles.scrollRow}>
           {results.map((item) => (
             <div key={item.id} style={styles.resultCard} onClick={() => handleCompanyClick(item.id)}>
               <img src={item.image || '/images/default.jpg'} alt={item.businessname} style={styles.resultImage} />
               <div>
-                <h3>{item.businessname || 'No Name'}</h3>
-                <p>{item.location || 'Unknown Location'}</p>
+                <h3 style={styles.companyName}>{item.businessname || 'No Name'}</h3>
+                <p style={styles.location}>{item.location || 'Unknown Location'}</p>
               </div>
             </div>
           ))}
@@ -121,15 +114,14 @@ const SearchSection = () => {
 
 const styles = {
   wrapper: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#003f66',
     padding: '20px',
-    margin: '0 30px',
-    marginTop: '-50px',
-    borderRadius: '12px',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+    margin: '0',
+    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+    minHeight: '50vh'
   },
   heading: {
-    color: '#222',
+    color: '#ffffff',
     marginBottom: '10px'
   },
   searchInput: {
@@ -137,7 +129,8 @@ const styles = {
     padding: '12px',
     borderRadius: '6px',
     border: '1px solid #ccc',
-    marginBottom: '20px'
+    marginBottom: '20px',
+    fontSize: '16px'
   },
   gridContainer: {
     display: 'grid',
@@ -148,13 +141,14 @@ const styles = {
   card: {
     width: '100%',
     height: '150px',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#ffffff',
     border: '1px solid #ddd',
     borderRadius: '12px',
     textAlign: 'center',
     padding: '10px',
     boxSizing: 'border-box',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    transition: 'transform 0.2s ease',
   },
   image: {
     width: '80px',
@@ -164,18 +158,28 @@ const styles = {
     marginBottom: '10px'
   },
   label: {
-    color: '#333',
-    fontWeight: '500'
+    color: '#003f66',
+    fontWeight: '600',
+    fontSize: '14px'
   },
   showAllBtn: {
     padding: '10px 16px',
-    backgroundColor: '#eee',
+    backgroundColor: '#ffffff',
     border: '1px solid #ccc',
     borderRadius: '8px',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    fontWeight: 'bold'
   },
   resultContainer: {
     marginTop: '30px'
+  },
+  resultHeading: {
+    color: '#ffffff',
+    marginBottom: '15px'
+  },
+  noResults: {
+    color: '#ffffff',
+    fontStyle: 'italic'
   },
   scrollRow: {
     display: 'flex',
@@ -192,7 +196,7 @@ const styles = {
     padding: '10px',
     border: '1px solid #eee',
     borderRadius: '8px',
-    backgroundColor: '#fafafa',
+    backgroundColor: '#ffffff',
     alignItems: 'center',
     cursor: 'pointer'
   },
@@ -201,6 +205,14 @@ const styles = {
     height: '120px',
     objectFit: 'cover',
     borderRadius: '8px'
+  },
+  companyName: {
+    color: '#003f66',
+    fontWeight: 'bold',
+    marginBottom: '5px'
+  },
+  location: {
+    color: '#666'
   }
 };
 
