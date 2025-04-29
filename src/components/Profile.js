@@ -7,14 +7,13 @@ import { useAuth } from '../contexts/AuthContext';
 
 const Profile = () => {
   const [userData, setUserData] = useState(null);
-  const [editing, setEditing] = useState(false);
+  const [editingField, setEditingField] = useState(null);
   const [updatedData, setUpdatedData] = useState({});
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
   const userRef = doc(db, 'user', currentUser?.uid);
 
-  // Fetch user data when component mounts
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -23,7 +22,7 @@ const Profile = () => {
           if (docSnap.exists()) {
             const data = docSnap.data();
             setUserData(data);
-            setUpdatedData(data); // Pre-fill the edit form with current user data
+            setUpdatedData(data);
           }
         }
       } catch (error) {
@@ -31,22 +30,19 @@ const Profile = () => {
       }
     };
 
-    if (currentUser) {
-      fetchUserData();
-    }
+    if (currentUser) fetchUserData();
   }, [currentUser, userRef]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setUpdatedData((prev) => ({ ...prev, [name]: value }));
+    setUpdatedData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSave = async () => {
     try {
       await updateDoc(userRef, updatedData);
       setUserData(updatedData);
-      setEditing(false);
-      alert('Profile updated successfully!');
+      setEditingField(null);
     } catch (error) {
       console.error("Error updating profile:", error);
     }
@@ -55,119 +51,152 @@ const Profile = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login');  // Redirect to login page after logging out
+      navigate('/login');
     } catch (error) {
       console.error('Error logging out:', error);
     }
   };
 
-  if (!userData) return <p>Loading...</p>;
+  if (!userData) return <p style={styles.loading}>Loading...</p>;
+
+  const renderField = (label, name, iconClass) => (
+    <div style={styles.infoBox}>
+      <div style={styles.infoHeader}>
+        <i className={`fas ${iconClass}`} style={styles.icon}></i>
+        <span style={styles.label}>{label}</span>
+        <i
+          className="fas fa-pen edit-icon"
+          style={styles.editIcon}
+          onClick={() => setEditingField(name)}
+        ></i>
+      </div>
+      {editingField === name ? (
+        <input
+          type="text"
+          name={name}
+          value={updatedData[name] || ''}
+          onChange={handleChange}
+          onBlur={handleSave}
+          autoFocus
+          style={styles.input}
+        />
+      ) : (
+        <div style={styles.infoContent}>{userData[name] || 'N/A'}</div>
+      )}
+    </div>
+  );
 
   return (
-    <div style={styles.profileContainer}>
-      <h1>Profile Details</h1>
-      <div style={styles.userInfo}>
+    <div style={styles.container}>
+      <h1 style={styles.heading}>My Profile</h1>
+      <div style={styles.card}>
         <img
-          src={updatedData.profilePicture || '/images/default-profile.jpg'}
+          src={userData.profilePicture || '/images/default-profile.jpg'}
           alt="Profile"
           style={styles.profileImage}
         />
-        {editing ? (
-          <>
-            <input
-              type="text"
-              name="fullName"
-              value={updatedData.fullName}
-              onChange={handleChange}
-              placeholder="Full Name"
-              style={styles.input}
-            />
-            <input
-              type="text"
-              name="phoneNumber"
-              value={updatedData.phoneNumber}
-              onChange={handleChange}
-              placeholder="Phone Number"
-              style={styles.input}
-            />
-            <input
-              type="text"
-              name="profilePicture"
-              value={updatedData.profilePicture}
-              onChange={handleChange}
-              placeholder="Profile Picture URL"
-              style={styles.input}
-            />
-            <button onClick={handleSave} style={styles.saveButton}>Save</button>
-          </>
-        ) : (
-          <>
-            <p><strong>Name:</strong> {userData.fullName}</p>
-            <p><strong>Email:</strong> {userData.email}</p>
-            <p><strong>Phone:</strong> {userData.phoneNumber}</p>
-            <button onClick={() => setEditing(true)} style={styles.editButton}>Edit Profile</button>
-          </>
-        )}
-      </div>
 
-      <button onClick={handleLogout} style={styles.logoutButton}>Logout</button>
+        <div style={styles.infoSection}>
+          {renderField('Full Name', 'fullName', 'fa-user')}
+          {renderField('Email', 'email', 'fa-envelope')}
+          {renderField('Phone Number', 'phoneNumber', 'fa-phone')}
+          {renderField('Profile Picture URL', 'profilePicture', 'fa-image')}
+        </div>
+
+        <button onClick={handleLogout} style={styles.logoutButton}>Logout</button>
+      </div>
     </div>
   );
 };
 
 const styles = {
-  profileContainer: {
+  container: {
     padding: '40px',
-    maxWidth: '800px',
+    backgroundColor: '#f1f5f9',
+    minHeight: '100vh',
+  },
+  heading: {
+    textAlign: 'center',
+    color: '#005f7f',
+    fontSize: '32px',
+    marginBottom: '20px',
+  },
+  card: {
+    maxWidth: '700px',
     margin: '0 auto',
     backgroundColor: '#fff',
     borderRadius: '12px',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+    padding: '30px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
     textAlign: 'center',
   },
-  userInfo: {
-    marginTop: '20px',
-  },
   profileImage: {
-    width: '150px',
-    height: '150px',
+    width: '160px',
+    height: '160px',
     objectFit: 'cover',
     borderRadius: '50%',
     marginBottom: '20px',
+    border: '3px solid #005f7f',
+  },
+  infoSection: {
+    marginTop: '20px',
+    textAlign: 'left',
+  },
+  infoBox: {
+    background: '#f9fafb',
+    borderRadius: '10px',
+    padding: '16px',
+    marginBottom: '16px',
+    border: '1px solid #e5e7eb',
+    position: 'relative',
+  },
+  infoHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    marginBottom: '8px',
+    fontWeight: '600',
+    fontSize: '16px',
+  },
+  icon: {
+    marginRight: '10px',
+    color: '#005f7f',
+  },
+  editIcon: {
+    marginLeft: 'auto',
+    color: '#005f7f',
+    cursor: 'pointer',
+  },
+  label: {
+    fontSize: '16px',
+  },
+  infoContent: {
+    fontSize: '15px',
+    color: '#374151',
   },
   input: {
+    width: '100%',
     padding: '10px',
-    margin: '8px 0',
-    width: '80%',
+    fontSize: '15px',
     borderRadius: '8px',
     border: '1px solid #ccc',
-  },
-  editButton: {
-    padding: '10px 20px',
-    marginTop: '20px',
-    backgroundColor: '#007bff',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-  },
-  saveButton: {
-    padding: '10px 20px',
-    marginTop: '20px',
-    backgroundColor: 'green',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
+    outline: 'none',
   },
   logoutButton: {
-    padding: '10px 20px',
-    marginTop: '20px',
+    marginTop: '30px',
+    padding: '10px 24px',
     backgroundColor: '#ff4d4d',
     color: '#fff',
     border: 'none',
     borderRadius: '6px',
+    fontSize: '16px',
+    fontWeight: '600',
     cursor: 'pointer',
+  },
+  loading: {
+    textAlign: 'center',
+    fontSize: '18px',
+    color: '#005f7f',
+    paddingTop: '40px',
   },
 };
 

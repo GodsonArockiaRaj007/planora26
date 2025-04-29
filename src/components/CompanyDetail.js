@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getAuth } from 'firebase/auth';
-import Navbar from './Navbar';  // make sure the path is correct
+import Navbar from './Navbar';
 
 const CompanyDetail = () => {
   const { id } = useParams();
@@ -72,7 +72,7 @@ const CompanyDetail = () => {
   const menuImages = [...new Set(company.menu || [])];
 
   return (
-    <div style={{ background: '#f1f5f9', minHeight: '100vh' }}>
+    <div style={{ background: '#f1f5f9', minHeight: '100vh', paddingBottom: '40px' }}>
       <Navbar />
 
       <div style={styles.card}>
@@ -83,15 +83,28 @@ const CompanyDetail = () => {
             style={styles.mainImage}
             onError={e => (e.target.style.display = 'none')}
           />
-          <div style={styles.companyDetails}>
+          <div>
             <h1 style={styles.companyName}>{company.businessname}</h1>
             <p style={styles.category}><strong>Category:</strong> {company.eventname}</p>
-            <p><strong>Location:</strong> {company.location}</p>
-            <p><strong>Experience:</strong> {company.exprience} years</p>
-            <p><strong>Hours:</strong> {company.hours}</p>
-            <p><strong>Mobile:</strong> {company.mobilenumber}</p>
-            <p><strong>Owner:</strong> {company.name}</p>
-            <p style={styles.description}><strong>Description:</strong> {company.description}</p>
+          </div>
+        </div>
+
+        <div style={styles.infoGrid}>
+          <InfoBox icon="fa-user" label="Owner" value={company.name} />
+          <InfoBox icon="fa-map-marker-alt" label="Location" value={company.location} />
+          <InfoBox icon="fa-calendar-alt" label="Posting Date" value="27-APR-25" />
+          <InfoBox icon="fa-phone" label="Mobile" value={company.mobilenumber} />
+          <InfoBox icon="fa-clock" label="Working Hours" value={company.hours} />
+          <InfoBox icon="fa-briefcase" label="Experience" value={`${company.exprience} years`} />
+        </div>
+
+        <div style={styles.infoBox}>
+          <div style={styles.infoHeader}>
+            <i className="fas fa-align-left" style={styles.icon}></i>
+            <span style={styles.infoLabel}>Description</span>
+          </div>
+          <div style={styles.infoContent}>
+            <p>{company.description}</p>
           </div>
         </div>
 
@@ -103,7 +116,7 @@ const CompanyDetail = () => {
                 <div key={idx} style={styles.menuImageWrapper}>
                   <img
                     src={url}
-                    alt={`Menu ${idx+1}`}
+                    alt={`Menu ${idx + 1}`}
                     style={styles.menuImage}
                     onClick={() => setModalImage(url)}
                     onError={e => (e.target.style.display = 'none')}
@@ -134,18 +147,18 @@ const CompanyDetail = () => {
             {loadingMessages
               ? <p>Loading messages…</p>
               : chatMessages.map(msg => (
-                  <div
-                    key={msg.id}
-                    style={{
-                      ...styles.messageBubble,
-                      alignSelf: msg.senderId === currentUser.uid ? 'flex-end' : 'flex-start',
-                      backgroundColor: msg.senderId === currentUser.uid ? '#005f7f' : '#e4e6eb',
-                      color: msg.senderId === currentUser.uid ? '#fff' : '#000',
-                    }}
-                  >
-                    {msg.message}
-                  </div>
-                ))
+                <div
+                  key={msg.id}
+                  style={{
+                    ...styles.messageBubble,
+                    alignSelf: msg.senderId === currentUser.uid ? 'flex-end' : 'flex-start',
+                    backgroundColor: msg.senderId === currentUser.uid ? '#005f7f' : '#e4e6eb',
+                    color: msg.senderId === currentUser.uid ? '#fff' : '#000',
+                  }}
+                >
+                  {msg.message}
+                </div>
+              ))
             }
           </div>
           <div style={styles.chatInputArea}>
@@ -169,42 +182,80 @@ const CompanyDetail = () => {
   );
 };
 
+// Reusable Info Box Component
+const InfoBox = ({ icon, label, value }) => (
+  <div style={styles.infoBox}>
+    <div style={styles.infoHeader}>
+      <i className={`fas ${icon}`} style={styles.icon}></i>
+      <span style={styles.infoLabel}>{label}</span>
+    </div>
+    <div style={styles.infoContent}>{value || 'N/A'}</div>
+  </div>
+);
+
 const styles = {
   card: {
     backgroundColor: '#fff',
-    maxWidth: '900px',
+    maxWidth: '1000px',
     margin: '30px auto',
     borderRadius: '12px',
     padding: '30px',
     boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-    color: '#2c3e50',
   },
   header: {
     display: 'flex',
     flexDirection: 'row',
     gap: '30px',
     alignItems: 'center',
-    marginBottom: '20px',
+    marginBottom: '30px',
   },
-  companyDetails: { flex: 1 },
   companyName: {
-    fontSize: '28px',
+    fontSize: '30px',
     fontWeight: '700',
-    marginBottom: '10px',
     color: '#005f7f',
   },
-  category: { fontSize: '18px', color: '#555' },
-  description: {
-    marginTop: '15px',
-    fontSize: '16px',
-    lineHeight: '1.5',
-    color: '#333',
+  category: {
+    fontSize: '18px',
+    color: '#555',
   },
   mainImage: {
     width: '200px',
     height: '200px',
     objectFit: 'cover',
     borderRadius: '12px',
+  },
+  infoGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+    gap: '20px',
+    marginBottom: '30px',
+  },
+  infoBox: {
+    background: '#f9fafb',
+    borderRadius: '10px',
+    padding: '16px',
+    border: '1px solid #e5e7eb',
+  },
+  infoHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    marginBottom: '10px',
+    fontWeight: '600',
+    fontSize: '16px',
+  },
+  icon: {
+    marginRight: '10px',
+    color: '#005f7f',
+  },
+  infoLabel: {
+    fontSize: '16px',
+  },
+  infoContent: {
+    fontSize: '15px',
+    color: '#374151',
+  },
+  menuContainer: {
+    marginTop: '20px',
   },
   subheading: {
     fontSize: '22px',
@@ -213,7 +264,6 @@ const styles = {
     color: '#005f7f',
     textAlign: 'center',
   },
-  menuContainer: { marginTop: '30px' },
   menuGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
@@ -288,8 +338,6 @@ const styles = {
   chatInputArea: {
     display: 'flex',
     borderTop: '1px solid #ccc',
-    borderBottomLeftRadius: '12px',
-    borderBottomRightRadius: '12px',
   },
   chatInput: {
     flex: 1,
