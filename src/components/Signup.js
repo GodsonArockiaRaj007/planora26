@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, query, where, getDocs, setDoc, doc } from 'firebase/firestore';
 import { useNavigate, Link } from 'react-router-dom';
 
 const Signup = () => {
@@ -9,6 +9,7 @@ const Signup = () => {
     name: '',
     email: '',
     mobile: '',
+    address: '',
     password: '',
     confirmPassword: ''
   });
@@ -21,7 +22,7 @@ const Signup = () => {
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    const { name, email, mobile, password, confirmPassword } = form;
+    const { name, email, mobile, address, password, confirmPassword } = form;
 
     if (password !== confirmPassword) {
       alert("Passwords don't match");
@@ -38,13 +39,18 @@ const Signup = () => {
         return;
       }
 
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const { uid } = userCredential.user;
 
-      await addDoc(userRef, {
-        name,
-        email,
-        mobile,
-        createdAt: new Date().toISOString()
+      // Save user data with UID included
+      await setDoc(doc(db, 'user', uid), {
+        fullName: name,
+        email: email,
+        phone: mobile,
+        address: address,
+        created_time: new Date(),
+        uid: uid,
+        verified: false
       });
 
       navigate('/home');
@@ -82,6 +88,7 @@ const Signup = () => {
           <input type="text" name="name" placeholder="Name" onChange={handleChange} required style={styles.input} />
           <input type="email" name="email" placeholder="Email" onChange={handleChange} required style={styles.input} />
           <input type="tel" name="mobile" placeholder="Mobile No" onChange={handleChange} required style={styles.input} />
+         
 
           <div style={styles.passwordWrapper}>
             <input

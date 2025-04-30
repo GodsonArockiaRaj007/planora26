@@ -1,28 +1,26 @@
-// src/pages/Profile.js
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Navbar from '../components/Navbar'; // ✅ Added Navbar import
 
 const Profile = () => {
   const [userData, setUserData] = useState(null);
   const [editingField, setEditingField] = useState(null);
-  const [updatedData, setUpdatedData] = useState({});
+  const [fieldValue, setFieldValue] = useState('');
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
-  const userRef = doc(db, 'user', currentUser?.uid);
+  const userRef = currentUser ? doc(db, 'user', currentUser.uid) : null;
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        if (currentUser) {
+        if (currentUser && userRef) {
           const docSnap = await getDoc(userRef);
           if (docSnap.exists()) {
-            const data = docSnap.data();
-            setUserData(data);
-            setUpdatedData(data);
+            setUserData(docSnap.data());
           }
         }
       } catch (error) {
@@ -30,21 +28,26 @@ const Profile = () => {
       }
     };
 
-    if (currentUser) fetchUserData();
+    fetchUserData();
   }, [currentUser, userRef]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setUpdatedData(prev => ({ ...prev, [name]: value }));
+  const handleEdit = (fieldName) => {
+    setEditingField(fieldName);
+    setFieldValue(userData[fieldName] || '');
   };
 
-  const handleSave = async () => {
+  const handleFieldChange = (e) => {
+    setFieldValue(e.target.value);
+  };
+
+  const handleFieldSave = async () => {
     try {
-      await updateDoc(userRef, updatedData);
-      setUserData(updatedData);
+      const updated = { [editingField]: fieldValue };
+      await updateDoc(userRef, updated);
+      setUserData(prev => ({ ...prev, ...updated }));
       setEditingField(null);
     } catch (error) {
-      console.error("Error updating profile:", error);
+      console.error("Error updating field:", error);
     }
   };
 
@@ -67,19 +70,20 @@ const Profile = () => {
         <i
           className="fas fa-pen edit-icon"
           style={styles.editIcon}
-          onClick={() => setEditingField(name)}
+          onClick={() => handleEdit(name)}
         ></i>
       </div>
       {editingField === name ? (
-        <input
-          type="text"
-          name={name}
-          value={updatedData[name] || ''}
-          onChange={handleChange}
-          onBlur={handleSave}
-          autoFocus
-          style={styles.input}
-        />
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <input
+            type="text"
+            name={name}
+            value={fieldValue}
+            onChange={handleFieldChange}
+            style={styles.input}
+          />
+          <button onClick={handleFieldSave} style={styles.saveButton}>Save</button>
+        </div>
       ) : (
         <div style={styles.infoContent}>{userData[name] || 'N/A'}</div>
       )}
@@ -87,23 +91,26 @@ const Profile = () => {
   );
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.heading}>My Profile</h1>
-      <div style={styles.card}>
-        <img
-          src={userData.profilePicture || '/images/default-profile.jpg'}
-          alt="Profile"
-          style={styles.profileImage}
-        />
+    <div>
+      <Navbar /> {/* ✅ Navbar rendered here */}
+      <div style={styles.container}>
+        <h1 style={styles.heading}>My Profile</h1>
+        <div style={styles.card}>
+          <img
+            src={userData.profilePicture || '/images/default-profile.jpg'}
+            alt="Profile"
+            style={styles.profileImage}
+          />
 
-        <div style={styles.infoSection}>
-          {renderField('Full Name', 'fullName', 'fa-user')}
-          {renderField('Email', 'email', 'fa-envelope')}
-          {renderField('Phone Number', 'phoneNumber', 'fa-phone')}
-          {renderField('Profile Picture URL', 'profilePicture', 'fa-image')}
+          <div style={styles.infoSection}>
+            {renderField('Full Name', 'fullName', 'fa-user')}
+            {renderField('Email', 'email', 'fa-envelope')}
+            {renderField('Phone Number', 'phone', 'fa-phone')}
+            {renderField('Profile Picture URL', 'profilePicture', 'fa-image')}
+          </div>
+
+          <button onClick={handleLogout} style={styles.logoutButton}>Logout</button>
         </div>
-
-        <button onClick={handleLogout} style={styles.logoutButton}>Logout</button>
       </div>
     </div>
   );
@@ -174,12 +181,21 @@ const styles = {
     color: '#374151',
   },
   input: {
-    width: '100%',
+    flex: 1,
     padding: '10px',
     fontSize: '15px',
     borderRadius: '8px',
     border: '1px solid #ccc',
     outline: 'none',
+  },
+  saveButton: {
+    padding: '8px 12px',
+    fontSize: '14px',
+    borderRadius: '6px',
+    backgroundColor: '#005f7f',
+    color: '#fff',
+    border: 'none',
+    cursor: 'pointer',
   },
   logoutButton: {
     marginTop: '30px',

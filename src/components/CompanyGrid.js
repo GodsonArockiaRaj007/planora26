@@ -117,6 +117,7 @@ const CompanyGrid = () => {
                   src={c.image || '/images/default.jpg'}
                   alt={c.businessname}
                   style={styles.image}
+                  loading="lazy"
                   onError={e => (e.currentTarget.style.display = 'none')}
                 />
                 <p style={styles.name}>{c.businessname || 'Unknown'}</p>

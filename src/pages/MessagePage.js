@@ -10,25 +10,39 @@ import {
   doc,
   serverTimestamp,
   limit,
+  getDoc,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getAuth } from 'firebase/auth';
+import Navbar from '../components/Navbar'; // ✅ Import Navbar
 
 const MessagePage = () => {
   const [senders, setSenders] = useState([]);
   const [selectedSender, setSelectedSender] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  const [fullName, setFullName] = useState('');
   const auth = getAuth();
   const currentUser = auth.currentUser;
   const chatEndRef = useRef(null);
 
-  // auto-scroll
+  useEffect(() => {
+    const fetchFullName = async () => {
+      if (!currentUser) return;
+      const userDocRef = doc(db, 'user', currentUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        setFullName(userData.fullName || '');
+      }
+    };
+    fetchFullName();
+  }, [currentUser]);
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
-  // fetch senders
   useEffect(() => {
     if (!currentUser) return;
     const unsub = onSnapshot(
@@ -47,7 +61,6 @@ const MessagePage = () => {
     return unsub;
   }, [currentUser]);
 
-  // fetch chat with selected
   useEffect(() => {
     if (!selectedSender || !currentUser) return;
     const q = query(
@@ -60,7 +73,6 @@ const MessagePage = () => {
     const unsub = onSnapshot(q, snap => {
       const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setChatMessages(msgs);
-      // mark seen
       snap.docs.forEach(async d => {
         const m = d.data();
         if (m.receiverId === currentUser.uid && m.status !== 'seen') {
@@ -76,19 +88,20 @@ const MessagePage = () => {
     await addDoc(collection(db, 'webchat'), {
       senderId: currentUser.uid,
       receiverId: selectedSender.senderId,
-      senderName: currentUser.displayName || 'Anonymous',
+      senderName: fullName || 'Anonymous',
       receiverName: selectedSender.senderName,
       message: newMessage.trim(),
       time: serverTimestamp(),
       status: 'sent',
     });
     setNewMessage('');
-  }, [newMessage, currentUser, selectedSender]);
+  }, [newMessage, currentUser, selectedSender, fullName]);
 
   const fmtTime = ts => ts?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   return (
     <div style={styles.pageWrapper}>
+      <Navbar /> {/* ✅ Navbar added here */}
       <div style={styles.container}>
         <div style={styles.sidebar}>
           <h3 style={styles.sidebarHeader}>Chats</h3>
@@ -177,6 +190,7 @@ const styles = {
     overflow: 'hidden',
     boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
     backgroundColor: '#ffffff',
+    marginTop: '60px', // To avoid overlap with fixed Navbar (if it's fixed)
   },
   sidebar: {
     width: '30%',

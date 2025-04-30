@@ -31,9 +31,7 @@ const Navbar = () => {
           where('receiverId', '==', user.uid),
           orderBy('time', 'desc')
         );
-        const snap = await getDocs(q);
-        const msgData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        // ...grouping logic omitted since unused
+        await getDocs(q); // Not used for display in navbar currently
       } catch (err) {
         console.error('Error fetching messages:', err);
       }
@@ -91,46 +89,48 @@ const Navbar = () => {
             />
             {searchQuery && (
               <div className="search-results">
-                {loading
-                  ? <div className="loading">Loading...</div>
-                  : companies.length
-                    ? companies.map(c => (
-                        <div
-                          key={c.id}
-                          className="result-item"
-                          onClick={() => handleSelect(c)}
-                        >
-                          {c.businessname}
-                        </div>
-                      ))
-                    : <div className="no-results">No matches found</div>
-                }
+                {loading ? (
+                  <div className="loading">Loading...</div>
+                ) : companies.length ? (
+                  companies.map((c) => (
+                    <div
+                      key={c.id}
+                      className="result-item"
+                      onClick={() => handleSelect(c)}
+                    >
+                      {c.businessname}
+                    </div>
+                  ))
+                ) : (
+                  <div className="no-results">No matches found</div>
+                )}
               </div>
             )}
           </div>
         </div>
 
         <div className="nav-right">
-          <div
-            className="hamburger"
-            onClick={() => setMenuOpen(prev => !prev)}
-          >
-            {menuOpen ? <FaTimes /> : <FaBars />}
-          </div>
+          <ul className={`nav-links ${menuOpen ? 'active' : ''}`}>
+            <li onClick={() => { navigate('/home'); setMenuOpen(false); }}>Home</li>
+            <li onClick={() => { navigate('/orders'); setMenuOpen(false); }}>Orders</li>
+            <li onClick={() => { navigate('/post-order'); setMenuOpen(false); }}>Post Order</li>
+            <li onClick={() => { navigate('/profile'); setMenuOpen(false); }}><FaUser /> Profile</li>
+            <li onClick={() => { navigate('/messages'); setMenuOpen(false); }}><FaEnvelope /> Messages</li>
+            <li onClick={() => { navigate('/cart'); setMenuOpen(false); }}><FaShoppingCart /> Cart</li>
+          </ul>
+        </div>
+
+        <div className="hamburger" onClick={() => setMenuOpen(prev => !prev)}>
+          {menuOpen ? <FaTimes /> : <FaBars />}
         </div>
       </div>
 
-      <ul className={`navbar-links ${menuOpen ? 'active' : ''}`}>
-        <li onClick={() => { navigate('/home'); setMenuOpen(false); }}>Home</li>
-        <li onClick={() => { navigate('/orders'); setMenuOpen(false); }}>Orders</li>
-        <li onClick={() => { navigate('/post-order'); setMenuOpen(false); }}>Post Order</li>
-        <li onClick={() => { navigate('/profile'); setMenuOpen(false); }}><FaUser /> Profile</li>
-        <li onClick={() => { navigate('/messages'); setMenuOpen(false); }}><FaEnvelope /> Messages</li>
-        <li onClick={() => { navigate('/cart'); setMenuOpen(false); }}><FaShoppingCart /> Cart</li>
-      </ul>
-
       <style>{`
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+        }
         .navbar {
           background: #003f66;
           color: #fff;
@@ -138,25 +138,35 @@ const Navbar = () => {
           position: sticky;
           top: 0;
           z-index: 1000;
-          display: flex;
-          flex-direction: column;
         }
         .navbar-main {
           display: flex;
           align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
         }
-        .nav-left, .nav-center, .nav-right {
+
+        .nav-left {
+          flex: 1;
+        }
+
+        .nav-center {
+          flex: 2;
           display: flex;
-          align-items: center;
+          justify-content: center;
         }
-        .nav-left { flex: 1; }
-        .nav-center { flex: 2; justify-content: center; }
-        .nav-right { flex: 1; justify-content: flex-end; }
+
+        .nav-right {
+          flex: 2;
+          display: flex;
+          justify-content: flex-end;
+        }
 
         .navbar-logo {
           font-size: 1.5rem;
           font-weight: bold;
         }
+
         .navbar-search {
           position: relative;
           width: 100%;
@@ -167,6 +177,7 @@ const Navbar = () => {
           align-items: center;
           padding: 0.3rem 0.75rem;
         }
+
         .navbar-search input {
           flex: 1;
           background: transparent;
@@ -176,7 +187,11 @@ const Navbar = () => {
           font-size: 0.9rem;
           outline: none;
         }
-        .search-icon { color: #ddd; }
+
+        .search-icon {
+          color: #ddd;
+        }
+
         .search-results {
           position: absolute;
           top: 110%;
@@ -190,68 +205,66 @@ const Navbar = () => {
           overflow-y: auto;
           z-index: 1001;
         }
+
         .result-item, .loading, .no-results {
           padding: 0.5rem;
           border-bottom: 1px solid #eee;
           cursor: pointer;
         }
-        .result-item:hover { background: #f0f0f0; }
 
-        /* Hamburger always present but hidden only on desktop */
+        .result-item:hover {
+          background: #f0f0f0;
+        }
+
         .hamburger {
-          display: block;
+          display: none;
           font-size: 1.5rem;
+          color: #fff;
           cursor: pointer;
         }
 
-        .navbar-links {
+        .nav-links {
           list-style: none;
-          overflow: hidden;
-          max-height: 0;
-          opacity: 0;
-          visibility: hidden;
-          transition: max-height 0.3s ease, opacity 0.3s ease;
-          flex-direction: column;
-          width: 100%;
-          background: #003f66;
-        }
-        .navbar-links.active {
-          max-height: 500px;
-          opacity: 1;
-          visibility: visible;
-        }
-        .navbar-links li {
-          padding: 0.7rem 1rem;
-          text-align: center;
-          cursor: pointer;
-          white-space: nowrap;
-        }
-        .navbar-links li:hover {
-          background: rgba(255,255,255,0.2);
-          border-radius: 8px;
+          display: flex;
+          gap: 1.5rem;
+          align-items: center;
         }
 
-        /* Desktop overrides */
-        @media (min-width: 769px) {
-          .navbar {
-            flex-direction: row;
-            align-items: center;
+        .nav-links li {
+          cursor: pointer;
+          padding: 0.5rem;
+          border-radius: 6px;
+          transition: background 0.2s;
+          display: flex;
+          align-items: center;
+          gap: 0.3rem;
+        }
+
+        .nav-links li:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 768px) {
+          .nav-center {
+            order: 3;
+            width: 100%;
+            margin-top: 10px;
           }
-          .navbar-links {
-            display: flex !important;
-            flex-direction: row;
-            max-height: none;
-            opacity: 1;
-            visibility: visible;
-            width: auto;
-            gap: 2rem;
-            background: none;
+
+          .nav-right {
+            width: 100%;
+            justify-content: center;
           }
-          .navbar-links li {
-            padding: 0.4rem 1rem;
+
+          .nav-links {
+            display: ${menuOpen ? 'flex' : 'none'};
+            flex-direction: column;
+            width: 100%;
+            margin-top: 1rem;
           }
+
           .hamburger {
-            display: none;
+            display: block;
           }
         }
       `}</style>
