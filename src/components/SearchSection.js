@@ -4,20 +4,20 @@ import { db } from '../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
 const categories = [
-  { name: 'Photography', image: 'images/photography.jpg' },
-  { name: 'Food', image: 'images/food.jpg' },
-  { name: 'Music', image: 'images/music.jpg' },
-  { name: 'Catering', image: 'images/catering.jpg' },
-  { name: 'Venue', image: 'images/venue.jpg' },
-  { name: 'Return Gift', image: 'images/gifts.jpg' },
-  { name: 'Travel', image: 'images/travel.jpg' },
-  { name: 'DJ', image: 'images/dj.jpg' },
-  { name: 'Cakes & Bakery', image: 'images/cakes.jpg' },
-  { name: 'Decoration', image: 'images/decoration.jpg' },
-  { name: 'Orchestra', image: 'images/orchestra.jpg' },
-  { name: 'Wedding', image: 'images/wedding.jpg' },
-  { name: 'Beautician', image: 'images/beautician.jpg' },
-  { name: 'Other', image: 'images/other.jpg' }
+  { name: 'Photography', image: '/images/photography.jpg' },
+  { name: 'Food', image: '/images/food.jpg' },
+  { name: 'Music', image: '/images/music.jpg' },
+  { name: 'Catering', image: '/images/catering.jpg' },
+  { name: 'Venue', image: '/images/venue.jpg' },
+  { name: 'Return Gift', image: '/images/gifts.jpg' },
+  { name: 'Travel', image: '/images/travel.jpg' },
+  { name: 'DJ', image: '/images/dj.jpg' },
+  { name: 'Cakes & Bakery', image: '/images/cakes.jpg' },
+  { name: 'Decoration', image: '/images/decoration.jpg' },
+  { name: 'Orchestra', image: '/images/orchestra.jpg' },
+  { name: 'Wedding', image: '/images/wedding.jpg' },
+  { name: 'Beautician', image: '/images/beautician.jpg' },
+  { name: 'Other', image: '/images/other.jpg' }
 ];
 
 const SearchSection = () => {
