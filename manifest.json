@@ -1,0 +1,29 @@
+{
+  "short_name": "Planora",
+  "name": "Planora Web App",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "16x16 24x24 32x32 48x48 64x64",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#003f66",
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "description": "Planora is a powerful web app to explore businesses by city.",
+  "lang": "en"
+}
