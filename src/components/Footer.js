@@ -28,10 +28,10 @@ const Footer = () => (
     <div style={styles.section}>
       <span style={styles.label}>Download Our App:</span>
       <a href="#" style={styles.appBadge}>
-        <img src="images/appstore.png" alt="App Store" style={styles.badgeImage} />
+        <img src={process.env.PUBLIC_URL + '/images/appstore.png'} alt="App Store" style={styles.badgeImage} />
       </a>
       <a href="#" style={styles.appBadge}>
-        <img src="images/playstore.png" alt="Google Play" style={styles.badgeImage} />
+        <img src={process.env.PUBLIC_URL + '/images/playstore.png'} alt="Google Play" style={styles.badgeImage} />
       </a>
     </div>
     <hr style={styles.divider} />

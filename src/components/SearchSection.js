@@ -4,20 +4,20 @@ import { db } from '../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
 const categories = [
-  { name: 'Photography', image: '/images/photography.jpg' },
-  { name: 'Food', image: '/images/food.jpg' },
-  { name: 'Music', image: '/images/music.jpg' },
-  { name: 'Catering', image: '/images/catering.jpg' },
-  { name: 'Venue', image: '/images/venue.jpg' },
-  { name: 'Return Gift', image: '/images/gifts.jpg' },
-  { name: 'Travel', image: '/images/travel.jpg' },
-  { name: 'DJ', image: '/images/dj.jpg' },
-  { name: 'Cakes & Bakery', image: '/images/cakes.jpg' },
-  { name: 'Decoration', image: '/images/decoration.jpg' },
-  { name: 'Orchestra', image: '/images/orchestra.jpg' },
-  { name: 'Wedding', image: '/images/wedding.jpg' },
-  { name: 'Beautician', image: '/images/beautician.jpg' },
-  { name: 'Other', image: '/images/other.jpg' }
+  { name: 'Photography', image: process.env.PUBLIC_URL + '/images/photography.jpg' },
+  { name: 'Food', image: process.env.PUBLIC_URL + '/images/food.jpg' },
+  { name: 'Music', image: process.env.PUBLIC_URL + '/images/music.jpg' },
+  { name: 'Catering', image: process.env.PUBLIC_URL + '/images/catering.jpg' },
+  { name: 'Venue', image: process.env.PUBLIC_URL + '/images/venue.jpg' },
+  { name: 'Return Gift', image: process.env.PUBLIC_URL + '/images/gifts.jpg' },
+  { name: 'Travel', image: process.env.PUBLIC_URL + '/images/travel.jpg' },
+  { name: 'DJ', image: process.env.PUBLIC_URL + '/images/dj.jpg' },
+  { name: 'Cakes & Bakery', image: process.env.PUBLIC_URL + '/images/cakes.jpg' },
+  { name: 'Decoration', image: process.env.PUBLIC_URL + '/images/decoration.jpg' },
+  { name: 'Orchestra', image: process.env.PUBLIC_URL + '/images/orchestra.jpg' },
+  { name: 'Wedding', image: process.env.PUBLIC_URL + '/images/wedding.jpg' },
+  { name: 'Beautician', image: process.env.PUBLIC_URL + '/images/beautician.jpg' },
+  { name: 'Other', image: process.env.PUBLIC_URL + '/images/other.jpg' }
 ];
 
 const SearchSection = () => {
@@ -99,7 +99,7 @@ const SearchSection = () => {
         <div style={styles.scrollRow}>
           {results.map((item) => (
             <div key={item.id} style={styles.resultCard} onClick={() => handleCompanyClick(item.id)}>
-              <img src={item.image || '/images/default.jpg'} alt={item.businessname} style={styles.resultImage} />
+              <img src={item.image || (process.env.PUBLIC_URL + '/images/default.jpg')} alt={item.businessname} style={styles.resultImage} />
               <div>
                 <h3 style={styles.companyName}>{item.businessname || 'No Name'}</h3>
                 <p style={styles.location}>{item.location || 'Unknown Location'}</p>

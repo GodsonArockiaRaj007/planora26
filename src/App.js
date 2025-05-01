@@ -84,7 +84,7 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <Router basename="/planora26">
         <AppRoutes />
       </Router>
     </AuthProvider>

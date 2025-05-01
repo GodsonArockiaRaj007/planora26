@@ -4,7 +4,7 @@ const HeroBanner = () => {
   return (
     <div style={styles.bannerContainer}>
       <video
-        src="/car-banner.mp4"
+        src={process.env.PUBLIC_URL + '/car-banner.mp4'}
         autoPlay
         loop
         muted
