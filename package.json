@@ -2,7 +2,7 @@
   "name": "plan",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://github.com/GodsonArockiaRaj007/planora26.git",
+  "homepage": "https://godsonarockiaraj007.github.io/planora26",
   "dependencies": {
     "firebase": "^11.6.0",
     "react": "^18.2.0",
