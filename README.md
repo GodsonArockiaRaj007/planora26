@@ -65,6 +65,22 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/a
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
 
+---
+
+## GitHub Actions Deployment
+
+This project is configured to be deployed on Google App Engine using GitHub Actions.
+
+To enable automatic deployment on pushes to the main branch:
+
+1. Create a Google Cloud service account with the "App Engine Deployer" role.
+2. Generate a JSON key for the service account.
+3. Add the JSON key as a secret named `GCP_SA_KEY` in your GitHub repository settings.
+4. Add your Google Cloud project ID as a secret named `GCP_PROJECT_ID` in your GitHub repository settings.
+5. Push your code to the `main` branch. The GitHub Actions workflow will build and deploy the app automatically.
+
+The deployment workflow file is located at `.github/workflows/deploy.yml`.
+
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
